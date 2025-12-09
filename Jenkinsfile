@@ -1,48 +1,38 @@
 pipeline {
-  agent any
+    agent any
 
-  options {
-    buildDiscarder(logRotator(numToKeepStr: '10'))
-    timestamps()
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
-
-    stage('Build') {
-      steps {
-        sh 'mvn -B -DskipTests=true clean package'
-      }
-    }
-
-    stage('Test') {
-      steps {
-        sh 'mvn -B test'
-      }
-      post {
-        always {
-          junit 'target/surefire-reports/*.xml'
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
+
+        stage('Build') {
+            steps {
+                bat 'mvn clean install'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'mvn test'
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
     }
 
-    stage('Archive') {
-      steps {
-        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-      }
+    post {
+        success {
+            echo "Build Successful!"
+        }
+        failure {
+            echo "Build failed"
+        }
     }
-  }
-
-  post {
-    success {
-      echo "Build succeeded: ${env.BUILD_URL}"
-    }
-    failure {
-      echo "Build failed"
-    }
-  }
 }
